@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Робот-механик | Веб-лаборатория</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        robot: '#f44336',
+                        detail: '#ffdd44',
+                        repaired: '#4caf50',
+                        tool: '#2196f3',
+                        obstacle: '#757575',
+                        oil: '#8d6e63',
+                        finish: '#ff9800'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen text-gray-100 p-4">
+    <div class="max-w-6xl mx-auto">
+        <!-- Заголовок -->
+        <header class="text-center mb-8 glow">
+            <h1 class="text-4xl md:text-5xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400">
+                <i class="fas fa-robot mr-3"></i>Робот-механик
+            </h1>
+            <p class="text-xl text-gray-200">Интерактивная лабораторная работа</p>
+        </header>
+
+        <!-- Основной контент -->
+        <div class="flex flex-col lg:flex-row gap-8 mb-8">
+            <!-- Поле робота -->
+            <div class="flex-1 bg-gray-900 rounded-2xl p-6 shadow-2xl border border-gray-800">
+                <div class="text-center mb-4">
+                    <h2 class="text-2xl font-bold text-blue-300">Рабочая зона</h2>
+                </div>
+                <div id="workshop-field" class="flex justify-center bg-gray-800 rounded-xl p-4">
+                    {{ svg|safe }}
+                </div>
+            </div>
+
+            <!-- Панель управления -->
+            <div class="w-full lg:w-80">
+                <div class="bg-gray-900 rounded-2xl p-6 shadow-2xl border border-gray-800 mb-6">
+                    <h2 class="text-2xl font-bold text-purple-300 mb-4 text-center">
+                        <i class="fas fa-gamepad mr-2"></i>Управление
+                    </h2>
+                    
+                    <!-- Кнопки управления -->
+                    <div class="grid grid-cols-3 gap-3 mb-6">
+                        <button onclick="moveRobot('backward')" 
+                                class="control-btn col-start-2 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl shadow-lg">
+                            <i class="fas fa-arrow-down text-2xl"></i>
+                        </button>
+                        <button onclick="moveRobot('left')" 
+                                class="control-btn bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg">
+                            <i class="fas fa-arrow-left text-2xl"></i>
+                        </button>
+                        <button onclick="moveRobot('forward')" 
+                                class="control-btn col-start-2 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl shadow-lg">
+                            <i class="fas fa-arrow-up text-2xl"></i>
+                        </button>
+                        <button onclick="moveRobot('right')" 
+                                class="control-btn bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg">
+                            <i class="fas fa-arrow-right text-2xl"></i>
+                        </button>
+                        <button onclick="moveRobot('diag_up')" 
+                                class="control-btn col-start-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl shadow-lg">
+                            <i class="fas fa-arrow-up-left text-2xl"></i>
+                        </button>
+                        <button onclick="moveRobot('diag_down')" 
+                                class="control-btn col-start-3 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl shadow-lg">
+                            <i class="fas fa-arrow-down-right text-2xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Основные действия -->
+                    <div class="space-y-3">
+                        <button onclick="repairDetail()" 
+                                class="control-btn bg-yellow-500 hover:bg-yellow-600 text-gray-900 w-full py-3 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center">
+                            <i class="fas fa-tools mr-2"></i>ПОЧИНИТЬ ДЕТАЛЬ
+                        </button>
+                        <button onclick="executeTask()" 
+                                class="control-btn bg-gradient-to-r from-orange-500 to-pink-600 hover:from-orange-600 hover:to-pink-700 text-white w-full py-3 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center">
+                            <i class="fas fa-rocket mr-2"></i>ВЫПОЛНИТЬ ЗАДАЧУ
+                        </button>
+                        <button onclick="resetField()" 
+                                class="control-btn bg-gray-600 hover:bg-gray-700 text-white w-full py-3 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center">
+                            <i class="fas fa-redo mr-2"></i>СБРОСИТЬ ПОЛЕ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Статус и легенда -->
+                <div class="bg-gray-900 rounded-2xl p-6 shadow-2xl border border-gray-800">
+                    <h2 class="text-2xl font-bold text-green-300 mb-4 text-center">
+                        <i class="fas fa-info-circle mr-2"></i>Информация
+                    </h2>
+                    
+                    <div class="mb-4 p-3 bg-gray-800 rounded-lg">
+                        <p class="font-bold mb-1">Текущая ячейка:</p>
+                        <p id="cell-type" class="text-lg text-blue-300 font-mono">
+                            {{ cell_type }}
+                        </p>
+                    </div>
+                    
+                    <div class="mb-4 p-3 bg-gray-800 rounded-lg">
+                        <p class="font-bold mb-1">Позиция робота:</p>
+                        <p id="robot-position" class="text-lg text-green-300 font-mono">
+                            ({{ robot_position.x }}, {{ robot_position.y }})
+                        </p>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="font-bold mb-2 text-center">Легенда</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-detail rounded mr-2"></div>
+                                <span class="text-sm">Деталь</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-repaired rounded mr-2"></div>
+                                <span class="text-sm">Починено</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-tool rounded mr-2"></div>
+                                <span class="text-sm">Инструмент</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-obstacle rounded mr-2"></div>
+                                <span class="text-sm">Препятствие</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-oil rounded mr-2"></div>
+                                <span class="text-sm">Масло</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-finish rounded mr-2"></div>
+                                <span class="text-sm">Финиш</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-robot rounded mr-2"></div>
+                                <span class="text-sm">Робот</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-gray-400 rounded mr-2"></div>
+                                <span class="text-sm">Пол</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Уведомления -->
+        <div id="notification-container" class="fixed top-4 right-4 z-50 w-80">
+            <!-- Уведомления будут добавляться сюда -->
+        </div>
+
+        <!-- Подвал -->
+        <footer class="text-center py-6 text-gray-400 border-t border-gray-800 mt-8">
+            <p>Лабораторная работа по программированию | Робот-механик</p>
+            <p class="text-sm mt-1">Современный веб-интерфейс с использованием FastAPI и Tailwind CSS</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
