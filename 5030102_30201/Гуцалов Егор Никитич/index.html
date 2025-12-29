@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Робот-Дизайнер</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #2c3e50;
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: #34495e;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .title-icon {
+            color: #E53935;
+            font-size: 28px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 180px);
+        }
+        
+        .workshop-container {
+            flex: 3;
+            background-color: #34495e;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .canvas-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: auto;
+            border: 2px solid #1a2530;
+            border-radius: 6px;
+            background-color: #1a2530;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #workshopCanvas {
+            display: block;
+            background-color: #1a2530;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .legend-container {
+            flex: 1;
+            background-color: #34495e;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .legend-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 20px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3b5369;
+        }
+        
+        .legend-items {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 2px solid white;
+            flex-shrink: 0;
+        }
+        
+        .legend-text {
+            font-size: 14px;
+            color: #ecf0f1;
+            line-height: 1.4;
+        }
+        
+        .robot-legend {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px dashed #3b5369;
+        }
+        
+        .robot-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .status-bar {
+            background-color: #34495e;
+            padding: 12px 20px;
+            margin-top: 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #ecf0f1;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        
+        .file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .upload-icon {
+            font-size: 18px;
+            margin-right: 5px;
+        }
+        
+        .solving-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .spinner {
+            width: 80px;
+            height: 80px;
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .instructions {
+            background-color: #3b5369;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .instructions h4 {
+            margin-bottom: 8px;
+            color: #3498db;
+        }
+        
+        .axis-label {
+            position: absolute;
+            font-size: 12px;
+            color: #aaa;
+            font-weight: bold;
+        }
+        
+        .axis-x {
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .axis-y {
+            top: 50%;
+            left: -40px;
+            transform: translateY(-50%) rotate(-90deg);
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 20px;
+            font-size: 14px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #e74c3c;
+        }
+        
+        .status-dot.connected {
+            background-color: #2ecc71;
+        }
+        
+        @media (max-width: 1100px) {
+            .main-content {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .legend-container {
+                margin-top: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            background-color: rgba(231, 76, 60, 0.15);
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 3px solid #e74c3c;
+        }
+        
+        .canvas-placeholder {
+            color: #7f8c8d;
+            font-size: 18px;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .server-warning {
+            background-color: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .server-warning a {
+            color: white;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+        
+        .setup-instructions {
+            background-color: #3b5369;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .setup-instructions ol {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .setup-instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background-color: #34495e;
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #3498db;
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="server-warning" id="serverWarning" style="display: none;">
+            ⚠️ ВАЖНО: Эта страница должна быть открыта через HTTP сервер, а не напрямую из файловой системы!
+            <div class="setup-instructions">
+                <p>Для правильной работы приложения:</p>
+                <ol>
+                    <li>Запустите бэкенд: <code>python backend.py</code> (он будет работать на порту 8080)</li>
+                    <li>Откройте эту страницу по адресу: <a href="#" id="correctUrlLink">http://localhost:8000</a></li>
+                    <li>ИЛИ используйте простой HTTP сервер для фронтенда:
+                        <ul>
+                            <li>Установите: <code>npm install -g live-server</code></li>
+                            <li>Запустите в папке с проектом: <code>live-server --port=8000</code></li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+        </div>
+        
+        <header>
+            <div class="title">
+                <span class="title-icon">🤖</span>
+                <span>Робот-Дизайнер</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div class="connection-status">
+                    <div class="status-dot" id="connectionStatus"></div>
+                    <span id="connectionText">Подключение к серверу...</span>
+                </div>
+                <div class="controls">
+                    <div class="file-input-wrapper">
+                        <button class="btn btn-primary" id="loadBtn">
+                            <span class="upload-icon">📤</span> Загрузить карту
+                        </button>
+                        <input type="file" class="file-input" id="mapFile" accept=".txt">
+                    </div>
+                    <button class="btn btn-success" id="solveBtn" disabled>
+                        <span>🚀</span> РЕШИТЬ
+                    </button>
+                    <button class="btn btn-warning" id="stopBtn" disabled>
+                        <span>⏹️</span> СТОП
+                    </button>
+                    <button class="btn btn-danger" id="resetBtn" disabled>
+                        <span>🔄</span> Сбросить
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="workshop-container">
+                <h2>Мастерская</h2>
+                <div class="canvas-wrapper">
+                    <canvas id="workshopCanvas"></canvas>
+                    <div class="canvas-placeholder" id="canvasPlaceholder">
+                        Загрузите карту для отображения мастерской
+                    </div>
+                    <div class="axis-label axis-x">Ось X</div>
+                    <div class="axis-label axis-y">Ось Y</div>
+                </div>
+            </div>
+            
+            <div class="legend-container">
+                <h2 class="legend-title">ЛЕГЕНДА</h2>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-color" id="color-canvas" style="background-color: #FFE082;"></div>
+                        <div class="legend-text">Холст (не обработан)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" id="color-sketch" style="background-color: #FFB300;"></div>
+                        <div class="legend-text">Эскиз (частично обработан)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" id="color-ready" style="background-color: #4CAF50;"></div>
+                        <div class="legend-text">Готово (полностью обработано)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" id="color-tool" style="background-color: #9E9E9E;"></div>
+                        <div class="legend-text">Инструмент (нельзя заходить)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" id="color-void" style="background-color: #212121;"></div>
+                        <div class="legend-text">Пустота (нельзя заходить)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" id="color-finish" style="background-color: #9C27B0;"></div>
+                        <div class="legend-text">Финиш (точка завершения)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" id="color-collection" style="background-color: #2196F3;"></div>
+                        <div class="legend-text">Коллекция (нейтральная ячейка)</div>
+                    </div>
+                </div>
+                
+                <div class="robot-legend">
+                    <div class="robot-icon" id="robotLegendIcon"></div>
+                    <div class="legend-text"><strong>Робот-Дизайнер</strong></div>
+                </div>
+                
+                <div class="instructions">
+                    <h4>Инструкция:</h4>
+                    <p>1. Загрузите текстовый файл с картой мастерской.</p>
+                    <p>2. Нажмите "РЕШИТЬ" для запуска алгоритма робота.</p>
+                    <p>3. Наблюдайте за пошаговой визуализацией работы робота.</p>
+                    <p>4. При необходимости остановите выполнение кнопкой "СТОП".</p>
+                    <p>5. Сбросьте состояние кнопкой "Сбросить".</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-bar" id="statusBar">
+            <div id="statusMessage">Загрузите карту для начала работы</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <div class="solving-overlay" id="solvingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        class RobotDesignerApp {
+            constructor() {
+                if (window.location.protocol === 'file:') {
+                    this.showFileProtocolWarning();
+                    return;
+                }
+                
+                this.apiUrl = 'http://localhost:8080/api';
+                this.healthUrl = 'http://localhost:8080/health';
+                
+                console.log('API URL:', this.apiUrl);
+                console.log('Health URL:', this.healthUrl);
+                
+                this.cellColors = {
+                    Canvas: '#FFE082',
+                    Sketch: '#FFB300',
+                    Ready: '#4CAF50',
+                    Tool: '#9E9E9E',
+                    Void: '#212121',
+                    Finish: '#9C27B0',
+                    Collection: '#2196F3'
+                };
+                this.robotColor = '#E53935';
+                this.canvas = document.getElementById('workshopCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.workshop = null;
+                this.isSolving = false;
+                this.pollingInterval = null;
+                this.cellSize = 50;
+                this.totalSteps = 0;
+                this.currentStep = 0;
+                this.connectionStatus = document.getElementById('connectionStatus');
+                this.connectionText = document.getElementById('connectionText');
+                this.canvasPlaceholder = document.getElementById('canvasPlaceholder');
+                
+                this.checkServerConnection();
+                this.init();
+            }
+            
+            showFileProtocolWarning() {
+                const warningElement = document.getElementById('serverWarning');
+                warningElement.style.display = 'block';
+                
+                const correctUrlLink = document.getElementById('correctUrlLink');
+                const currentPath = window.location.pathname;
+                const fileName = currentPath.substring(currentPath.lastIndexOf('/') + 1);
+                correctUrlLink.href = `http://localhost:8000/${fileName}`;
+                correctUrlLink.textContent = `http://localhost:8000/${fileName}`;
+                
+                document.getElementById('loadBtn').disabled = true;
+                document.getElementById('solveBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = true;
+                document.getElementById('resetBtn').disabled = true;
+                
+                this.setStatus('Ошибка: страница открыта через file:// протокол. См. инструкции выше.');
+                this.showError('Приложение не может работать при открытии файла напрямую из файловой системы. Необходимо использовать HTTP сервер.');
+            }
+            
+            async checkServerConnection() {
+                try {
+                    const response = await fetch(this.healthUrl, {
+                        method: 'GET',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.connectionStatus.classList.add('connected');
+                        this.connectionText.textContent = `Сервер подключен (${data.message})`;
+                        console.log('Сервер доступен:', data);
+                    } else {
+                        this.connectionStatus.classList.remove('connected');
+                        this.connectionText.textContent = 'Сервер недоступен';
+                        console.error('Сервер вернул ошибку:', response.status);
+                        this.showError(`Сервер вернул ошибку: ${response.status}. Убедитесь, что бэкенд запущен.`);
+                    }
+                } catch (error) {
+                    this.connectionStatus.classList.remove('connected');
+                    this.connectionText.textContent = 'Сервер недоступен';
+                    console.error('Ошибка подключения к серверу:', error);
+                    this.showError(`Не удалось подключиться к серверу: ${error.message}. Убедитесь, что бэкенд запущен на порту 8080.`);
+                }
+            }
+            
+            async init() {
+                await this.loadLegend();
+                this.setupEventListeners();
+                this.drawRobotLegendIcon();
+                this.updateUIState();
+                this.pollState();
+                
+                window.addEventListener('unhandledrejection', (event) => {
+                    if (event.reason && event.reason.message && 
+                        (event.reason.message.includes('Failed to fetch') || 
+                         event.reason.message.includes('NetworkError'))) {
+                        this.showError('Ошибка соединения с сервером. Проверьте, запущен ли бэкенд на порту 8080');
+                        event.preventDefault();
+                    }
+                });
+            }
+            
+            async loadLegend() {
+                try {
+                    const response = await fetch(`${this.apiUrl}/legend`, {
+                        mode: 'cors'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.cell_colors) {
+                        this.cellColors = data.cell_colors;
+                        this.updateLegendColors();
+                    }
+                    
+                    if (data.robot_color) {
+                        this.robotColor = data.robot_color;
+                        this.drawRobotLegendIcon();
+                    }
+                } catch (error) {
+                    console.error('Ошибка загрузки легенды:', error);
+                    this.showError(`Ошибка загрузки легенды: ${error.message}`);
+                }
+            }
+            
+            updateLegendColors() {
+                Object.entries(this.cellColors).forEach(([type, color]) => {
+                    const element = document.getElementById(`color-${type.toLowerCase()}`);
+                    if (element) {
+                        element.style.backgroundColor = color;
+                    }
+                });
+            }
+            
+            drawRobotLegendIcon() {
+                const iconContainer = document.getElementById('robotLegendIcon');
+                iconContainer.innerHTML = `
+                    <svg width="30" height="30" viewBox="0 0 30 30">
+                        <polygon points="15,5 5,25 25,25" fill="${this.robotColor}" stroke="black" stroke-width="1.5" />
+                    </svg>
+                `;
+            }
+            
+            setupEventListeners() {
+                document.getElementById('mapFile').addEventListener('change', (e) => this.handleFileUpload(e));
+                document.getElementById('solveBtn').addEventListener('click', () => this.solveMaze());
+                document.getElementById('stopBtn').addEventListener('click', () => this.stopSolving());
+                document.getElementById('resetBtn').addEventListener('click', () => this.resetMaze());
+                
+                window.addEventListener('resize', () => this.resizeCanvas());
+            }
+            
+            updateUIState() {
+                const solveBtn = document.getElementById('solveBtn');
+                const stopBtn = document.getElementById('stopBtn');
+                const resetBtn = document.getElementById('resetBtn');
+                
+                solveBtn.disabled = !this.workshop || this.isSolving;
+                stopBtn.disabled = !this.isSolving;
+                resetBtn.disabled = !this.workshop;
+                
+                this.canvasPlaceholder.style.display = this.workshop ? 'none' : 'block';
+                this.canvas.style.display = this.workshop ? 'block' : 'none';
+            }
+            
+            async handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    this.setStatus('Загрузка карты...');
+                    this.showLoading(true);
+                    this.hideError();
+                    
+                    const response = await fetch(`${this.apiUrl}/load_map`, {
+                        method: 'POST',
+                        body: formData,
+                        mode: 'cors'
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        let errorData;
+                        try {
+                            errorData = JSON.parse(errorText);
+                        } catch (e) {
+                            errorData = { error: errorText };
+                        }
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    await this.updateWorkshopState();
+                    this.setStatus(`Карта загружена: ${this.workshop.width}x${this.workshop.height}`);
+                } catch (error) {
+                    console.error('Ошибка загрузки:', error);
+                    this.setStatus(`Ошибка загрузки`);
+                    this.showError(`Не удалось загрузить карту: ${error.message}`);
+                } finally {
+                    this.showLoading(false);
+                    event.target.value = '';
+                    this.updateUIState();
+                }
+            }
+            
+            async solveMaze() {
+                if (this.isSolving) return;
+                
+                try {
+                    this.isSolving = true;
+                    this.updateUIState();
+                    this.setStatus('Решение задачи...');
+                    this.hideError();
+                    
+                    const response = await fetch(`${this.apiUrl}/solve`, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        let errorData;
+                        try {
+                            errorData = JSON.parse(errorText);
+                        } catch (e) {
+                            errorData = { error: errorText };
+                        }
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('Решение запущено:', result);
+                    
+                    if (result.total_steps) {
+                        this.totalSteps = result.total_steps;
+                    }
+                    
+                    this.pollState();
+                } catch (error) {
+                    console.error('Ошибка решения:', error);
+                    this.setStatus(`Ошибка решения`);
+                    this.showError(`Не удалось запустить решение: ${error.message}`);
+                    this.isSolving = false;
+                    this.updateUIState();
+                }
+            }
+            
+            async stopSolving() {
+                try {
+                    this.setStatus('Остановка решения...');
+                    this.hideError();
+                    
+                    const response = await fetch(`${this.apiUrl}/stop`, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        let errorData;
+                        try {
+                            errorData = JSON.parse(errorText);
+                        } catch (e) {
+                            errorData = { error: errorText };
+                        }
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('Решение остановлено:', result);
+                    
+                    this.isSolving = false;
+                    this.updateUIState();
+                    this.setStatus('Решение остановлено');
+                } catch (error) {
+                    console.error('Ошибка остановки:', error);
+                    this.setStatus(`Ошибка остановки`);
+                    this.showError(`Не удалось остановить решение: ${error.message}`);
+                }
+            }
+            
+            async resetMaze() {
+                try {
+                    this.setStatus('Сброс состояния...');
+                    this.showLoading(true);
+                    this.hideError();
+                    
+                    const response = await fetch(`${this.apiUrl}/reset`, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        let errorData;
+                        try {
+                            errorData = JSON.parse(errorText);
+                        } catch (e) {
+                            errorData = { error: errorText };
+                        }
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    await this.updateWorkshopState();
+                    this.setStatus('Лабиринт сброшен к начальному состоянию');
+                } catch (error) {
+                    console.error('Ошибка сброса:', error);
+                    this.setStatus(`Ошибка сброса`);
+                    this.showError(`Не удалось сбросить состояние: ${error.message}`);
+                } finally {
+                    this.showLoading(false);
+                    this.updateUIState();
+                }
+            }
+            
+            async pollState() {
+                if (this.pollingInterval) {
+                    clearInterval(this.pollingInterval);
+                }
+                
+                const interval = this.isSolving ? 300 : 2000;
+                
+                this.pollingInterval = setInterval(async () => {
+                    try {
+                        await this.updateWorkshopState();
+                        
+                        console.log('Current state:', {
+                            isSolving: this.isSolving,
+                            workshopStatus: this.workshop?.status,
+                            currentStep: this.workshop?.current_step,
+                            totalSteps: this.workshop?.total_steps
+                        });
+                        
+                        if (this.isSolving && this.workshop && 
+                            (this.workshop.status !== 'solving' || 
+                             (this.workshop.current_step !== undefined && 
+                              this.workshop.total_steps !== undefined && 
+                              this.workshop.current_step >= this.workshop.total_steps))) {
+                            this.isSolving = false;
+                            clearInterval(this.pollingInterval);
+                            this.updateUIState();
+                            
+                            if (this.workshop.status === 'idle' && this.workshop.message.includes('успешно')) {
+                                this.setStatus('Задача успешно решена!');
+                                console.log('Задача успешно решена!');
+                            } else if (this.workshop.status === 'error') {
+                                this.setStatus(`Ошибка выполнения`);
+                                this.showError(`Ошибка при решении: ${this.workshop.message}`);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Ошибка опроса состояния:', error);
+                    }
+                }, interval);
+            }
+            
+            async updateWorkshopState() {
+                try {
+                    this.hideError();
+                    
+                    const response = await fetch(`${this.apiUrl}/state`, {
+                        mode: 'cors'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.workshop) {
+                        this.workshop = data;
+                        let statusMessage = data.message || 'Готово';
+                        
+                        if (data.status === 'solving') {
+                            this.isSolving = true;
+                        }
+                        
+                        if (data.current_step !== undefined && data.total_steps !== undefined) {
+                            this.currentStep = data.current_step;
+                            this.totalSteps = data.total_steps;
+                            
+                            const progress = this.totalSteps > 0 ? 
+                                (this.currentStep / this.totalSteps) * 100 : 0;
+                            document.getElementById('progressFill').style.width = `${progress}%`;
+                            
+                            statusMessage += ` - Шаг ${this.currentStep}/${this.totalSteps}`;
+                        } else {
+                            document.getElementById('progressFill').style.width = '0%';
+                        }
+                        
+                        this.setStatus(statusMessage);
+                        
+                        this.resizeCanvas();
+                        
+                        this.drawWorkshop();
+                    } else {
+                        this.workshop = null;
+                        this.clearCanvas();
+                        this.setStatus(data.message || 'Ожидание загрузки карты');
+                        document.getElementById('progressFill').style.width = '0%';
+                    }
+                } catch (error) {
+                    console.error('Ошибка обновления состояния:', error);
+                    if (this.workshop) {
+                        this.showError(`Ошибка обновления состояния: ${error.message}. Проверьте соединение с сервером.`);
+                    }
+                }
+                
+                this.updateUIState();
+            }
+            
+            resizeCanvas() {
+                if (!this.workshop || !this.workshop.workshop) return;
+                
+                const container = document.querySelector('.canvas-wrapper');
+                const containerRect = container.getBoundingClientRect();
+                const containerWidth = containerRect.width - 20;
+                const containerHeight = containerRect.height - 60; 
+                
+                this.cellSize = Math.min(
+                    Math.floor(containerWidth / this.workshop.workshop.width),
+                    Math.floor(containerHeight / this.workshop.workshop.height),
+                    70 
+                );
+                
+                this.cellSize = Math.max(this.cellSize, 25);
+                
+                this.canvas.width = this.workshop.workshop.width * this.cellSize;
+                this.canvas.height = this.workshop.workshop.height * this.cellSize;
+                
+                this.drawWorkshop();
+            }
+            
+            drawWorkshop() {
+                if (!this.workshop || !this.workshop.workshop || !this.workshop.workshop.cells) {
+                    this.clearCanvas();
+                    return;
+                }
+                
+                const ctx = this.ctx;
+                const canvas = this.canvas;
+                const workshop = this.workshop.workshop;
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                for (let y = 0; y < workshop.height; y++) {
+                    for (let x = 0; x < workshop.width; x++) {
+                        const canvasY = workshop.height - 1 - y;
+                        const cell = workshop.cells[y][x];
+                        
+                        if (!cell) continue;
+                        
+                        this.drawCell(x, canvasY, cell);
+                    }
+                }
+                
+                this.drawGrid();
+                
+                this.drawAxisLabels();
+            }
+            
+            drawCell(x, y, cell) {
+                const ctx = this.ctx;
+                const cellSize = this.cellSize;
+                
+                const x1 = x * cellSize;
+                const y1 = y * cellSize;
+                const x2 = x1 + cellSize;
+                const y2 = y1 + cellSize;
+                
+                const cellType = cell.cell_type;
+                const color = this.cellColors[cellType] || '#2c3e50';
+                ctx.fillStyle = color;
+                ctx.fillRect(x1, y1, cellSize, cellSize);
+                
+                ctx.strokeStyle = cell.has_robot ? 'yellow' : '#555';
+                ctx.lineWidth = cell.has_robot ? 2 : 1;
+                ctx.strokeRect(x1, y1, cellSize, cellSize);
+                
+                if (cellSize > 30) {
+                    ctx.fillStyle = this.getTextColor(color);
+                    ctx.font = `bold ${Math.max(10, Math.floor(cellSize / 4))}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    let text = cellType.charAt(0);
+                    if (cell.has_robot) text += 'R';
+                    
+                    ctx.fillText(text, x1 + cellSize / 2, y1 + cellSize / 2);
+                }
+                
+                if (cell.has_robot) {
+                    this.drawRobot(x1, y1, x2, y2);
+                }
+            }
+            
+            drawRobot(x1, y1, x2, y2) {
+                const ctx = this.ctx;
+                const center_x = (x1 + x2) / 2;
+                const center_y = (y1 + y2) / 2;
+                const size = this.cellSize / 3;
+                
+                ctx.beginPath();
+                ctx.moveTo(center_x, center_y - size);   
+                ctx.lineTo(center_x - size, center_y + size);  
+                ctx.lineTo(center_x + size, center_y + size);  
+                ctx.closePath();
+                
+                ctx.fillStyle = this.robotColor;
+                ctx.fill();
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+            
+            drawGrid() {
+                if (!this.workshop || !this.workshop.workshop) return;
+                
+                const ctx = this.ctx;
+                const cellSize = this.cellSize;
+                const workshop = this.workshop.workshop;
+                
+                ctx.strokeStyle = '#555';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                
+                for (let x = 0; x <= workshop.width; x++) {
+                    const xPos = x * cellSize;
+                    ctx.beginPath();
+                    ctx.moveTo(xPos, 0);
+                    ctx.lineTo(xPos, this.canvas.height);
+                    ctx.stroke();
+                }
+                
+                for (let y = 0; y <= workshop.height; y++) {
+                    const yPos = y * cellSize;
+                    ctx.beginPath();
+                    ctx.moveTo(0, yPos);
+                    ctx.lineTo(this.canvas.width, yPos);
+                    ctx.stroke();
+                }
+                
+                ctx.setLineDash([]);
+            }
+            
+            drawAxisLabels() {
+                if (!this.workshop || !this.workshop.workshop) return;
+                
+                const ctx = this.ctx;
+                const cellSize = this.cellSize;
+                const workshop = this.workshop.workshop;
+                const padding = 5;
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                for (let x = 0; x < workshop.width; x++) {
+                    const xPos = x * cellSize + cellSize / 2;
+                    const yPos = this.canvas.height + padding + 10;
+                    ctx.fillText(x.toString(), xPos, yPos);
+                }
+                
+                ctx.textAlign = 'right';
+                for (let y = 0; y < workshop.height; y++) {
+                    const canvasY = workshop.height - 1 - y;
+                    const xPos = -padding;
+                    const yPos = canvasY * cellSize + cellSize / 2;
+                    ctx.fillText(y.toString(), xPos, yPos);
+                }
+            }
+            
+            getTextColor(backgroundColor) {
+                const hex = backgroundColor.replace('#', '');
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                
+                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                return luminance > 0.5 ? '#000' : '#fff';
+            }
+            
+            clearCanvas() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+            
+            setStatus(message) {
+                document.getElementById('statusMessage').textContent = message;
+            }
+            
+            showError(message) {
+                const errorElement = document.getElementById('errorMessage');
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+            
+            hideError() {
+                document.getElementById('errorMessage').style.display = 'none';
+            }
+            
+            showLoading(show) {
+                document.getElementById('solvingOverlay').style.display = show ? 'flex' : 'none';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                if (window.location.protocol !== 'file:') {
+                    window.app = new RobotDesignerApp();
+                    
+                    window.addEventListener('resize', () => {
+                        if (window.app && window.app.workshop) {
+                            window.app.resizeCanvas();
+                        }
+                    });
+                } else {
+                    const app = new RobotDesignerApp();
+                }
+            } catch (error) {
+                console.error('Ошибка инициализации приложения:', error);
+                alert(`Ошибка инициализации приложения: ${error.message}. Проверьте консоль для подробностей.`);
+            }
+        });
+    </script>
+</body>
+</html>
