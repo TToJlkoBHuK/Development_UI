@@ -1,0 +1,69 @@
+классы:
+  - РоботЛаборант: RobotLabAssistant
+    свойства:
+      - лабиринт: labyrinth
+    методы:
+      - ПодойтиКПробирке: move_to_test_tube
+      - ОтойтиОтСтола: move_back_from_table
+      - СместитьсяВлево: move_left
+      - СместитьсяВправо: move_right
+      - Подняться: move_up
+      - Спуститься: move_down
+      - Пробирка: handle_test_tube
+      - Пусто: handle_empty
+
+  - ЛабиринтРоботЛаборант: LabyrinthRobot
+    свойства:
+      - ширина: width
+      - длина: height
+      - ячейки: cells
+    методы:
+      - ПолучитьСоседнююЯчейку: get_neighbor_cell
+      - ПолучитьИтератор: get_iterator
+      - ИнициализироватьЛабиринт: initialize_labyrinth
+
+  - ЯчейкаРоботЛаборант: RobotCell
+    свойства:
+      - ячейка_робота: is_robot
+      - тип_ячейки: cell_type
+    методы: []
+
+  - СторонаНаправление: DirectionSide
+    свойства:
+      - сторона: side
+      - направление: direction
+    методы: []
+
+  - МетодНаправление: MethodDirection
+    свойства:
+      - метод: method
+      - направление: direction
+    методы: []
+перечисления:
+  - ТипЯчеекЛаборатории: CellType
+    опции:
+      - Пусто: EMPTY
+      - Пробирка: TEST_TUBE
+      - Проанализировано: ANALYZED
+      - Реагент: REAGENT
+      - Барьер: BARRIER
+      - Мусор: TRASH
+      - Финиш: FINISH
+
+  - БазовыеТипыНаправления: BaseDirection
+    опции:
+      - С: N
+      - Ю: S
+      - З: W
+      - В: E
+      - СЗ: NW
+      - ЮВ: SE
+
+  - ТипНаправленийЛабНаправлений: LabDirection
+    опции:
+      - ВзятьВперёд: FORWARD
+      - ВернутьсяНазад: BACKWARD
+      - СместитьсяВлево: LEFT
+      - СместитьсяВправо: RIGHT
+      - КУглуВверх: UP_CORNER
+      - КУглуВниз: DOWN_CORNER
