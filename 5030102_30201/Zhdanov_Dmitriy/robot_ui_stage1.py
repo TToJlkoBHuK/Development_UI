@@ -130,6 +130,7 @@ class RobotLabUI:
             "move_right\n"
             "move_right\n"
             "move_right\n"
+            "move_right\n"
         )
 
         self.btn_execute = tk.Button(
