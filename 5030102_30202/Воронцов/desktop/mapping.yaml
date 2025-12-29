@@ -1,0 +1,57 @@
+классы:
+  - РоботГидролог: HydroRobot
+    свойства:
+      - лабиринт: maze
+    методы:
+      - ПлытьВперёд: SwimForward
+      - ОтойтиВзад: MoveBackward
+      - СместитьсяВлево: MoveLeft
+      - СместитьсяВправо: MoveRight
+      - Подняться: MoveUp
+      - Спуститься: MoveDown
+      - Вода: Water
+      - Берег: Shore
+
+  - ЛабиринтРоботГидролог: HydroMaze
+    свойства:
+      - ширина: width
+      - длина: height
+      - ячейки: cells
+    методы:
+      - ПолучитьСоседнююЯчейку: GetNeighborCell
+      - ПолучитьИтератор: GetIterator
+      - ИнициализироватьЛабиринт: InitializeMaze
+
+  - ЯчейкаРоботГидролог: HydroCell
+    свойства:
+      - ячейка_робота: is_robot_cell
+      - тип_ячейки: cell_type
+
+перечисления:
+  - ТипЯчеекГидросети: HydroNetCellType
+    опции:
+      - Вода: Water
+      - Берег: Shore
+      - Образец: Sample
+      - Сеть: Network
+      - Преграда: Barrier
+      - Финиш: Finish
+      - Канал: Channel
+
+  - ТипНаправленийГидрНап: HydroMovementType
+    опции:
+      - ПлытьВперёд: SwimForward
+      - ПлытьНазад: SwimBackward
+      - СместитьсяВлево: MoveLeft
+      - СместитьсяВправо: MoveRight
+      - ДиагГВ: DiagUpLeft
+      - ДиагГН: DiagDownRight
+
+  - БазовыеТипыНаправления: BasicDirectionType
+    опции:
+      - С: North
+      - Ю: South
+      - З: West
+      - В: East
+      - СЗ: NorthWest
+      - ЮВ: SouthEast
