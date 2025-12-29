@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>РоботМетеоролог — этап 2 (Web + Python)</title>
+  <style>
+    :root { --cell: 56px; --border: 1px; }
+    body { margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:#111; color:#eee; }
+    .wrap { max-width: 980px; margin: 24px auto; padding: 0 16px; }
+    .panel { background:#1b1b1b; border:1px solid #2a2a2a; border-radius:12px; padding:14px; }
+    .top { display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; }
+    .btns { display:flex; gap:10px; flex-wrap:wrap; }
+    button { background:#2a2a2a; color:#eee; border:1px solid #3a3a3a; border-radius:10px; padding:10px 14px; cursor:pointer; font-weight:600; }
+    button:hover { background:#323232; }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+    .grid {
+      display:grid;
+      grid-template-columns: repeat(10, calc(var(--cell) + var(--border)*2));
+      gap: 0;
+      background:#000;
+      padding: 10px;
+      border-radius: 12px;
+      overflow:auto;
+      user-select:none;
+    }
+    .cell {
+      width: var(--cell);
+      height: var(--cell);
+      border: var(--border) solid #000;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:800;
+      font-size: 22px;
+      color:#000;
+      position:relative;
+      box-sizing: content-box;
+    }
+    .robotDot {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background:#000;
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform: translate(-50%,-50%);
+    }
+    .legend { display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; opacity:.85; font-size: 13px; }
+    .chip { padding:6px 10px; border-radius:999px; background:#232323; border:1px solid #2f2f2f; }
+    .chip b { margin-right:6px; }
+    .status { margin-top: 12px; opacity:.92; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <div class="top">
+        <div class="btns">
+          <button id="runBtn">Run</button>
+          <button id="stepBtn">Step</button>
+          <button id="resetBtn">Reset</button>
+          <button id="demoBtn">Demo</button>
+        </div>
+        <div class="chip">ЛКМ: тип · ПКМ: робот</div>
+      </div>
+
+      <div id="grid" class="grid"></div>
+
+      <div class="legend">
+        <div class="chip"><b>П</b> Площадка</div>
+        <div class="chip"><b>Д</b> Датчик</div>
+        <div class="chip"><b>З</b> Замерено</div>
+        <div class="chip"><b>С</b> Станция</div>
+        <div class="chip"><b>Б</b> Барьер</div>
+        <div class="chip"><b>О</b> Окно</div>
+        <div class="chip"><b>Ф</b> Финиш</div>
+      </div>
+
+      <div id="status" class="status"></div>
+    </div>
+  </div>
+
+  <script>
+    const gridEl = document.getElementById("grid");
+    const statusEl = document.getElementById("status");
+    const runBtn = document.getElementById("runBtn");
+    const stepBtn = document.getElementById("stepBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const demoBtn = document.getElementById("demoBtn");
+
+    let running = false;
+    let runTimer = null;
+
+    const COLORS = {
+      PLATFORM: "#ffffff",
+      SENSOR: "#ffd400",
+      MEASURED: "#00ff2a",
+      STATION: "#00f0ff",
+      BARRIER: "#7a7a7a",
+      WINDOW: "#ff00ff",
+      FINISH: "#ff2a2a",
+    };
+
+    const LABEL = {
+      PLATFORM: "П",
+      SENSOR: "Д",
+      MEASURED: "З",
+      STATION: "С",
+      BARRIER: "Б",
+      WINDOW: "О",
+      FINISH: "Ф",
+    };
+
+    async function apiGet(path) {
+      const r = await fetch(path);
+      if (!r.ok) throw new Error(await r.text());
+      return await r.json();
+    }
+
+    async function apiPost(path) {
+      const r = await fetch(path, { method: "POST" });
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(body.detail || "error");
+      return body;
+    }
+
+    async function refresh() {
+      const st = await apiGet("/api/state");
+      render(st);
+    }
+
+    function render(st) {
+      const maze = st.maze;
+      gridEl.style.gridTemplateColumns = `repeat(${maze.width}, calc(var(--cell) + var(--border)*2))`;
+      gridEl.innerHTML = "";
+
+      for (const row of maze.grid) {
+        for (const c of row) {
+          const d = document.createElement("div");
+          d.className = "cell";
+          d.style.background = COLORS[c.t] || "#fff";
+          d.textContent = LABEL[c.t] || "";
+          d.dataset.x = String(c.x);
+          d.dataset.y = String(c.y);
+
+          if (c.r) {
+            const dot = document.createElement("div");
+            dot.className = "robotDot";
+            d.appendChild(dot);
+          }
+
+          d.addEventListener("contextmenu", (e) => e.preventDefault());
+          d.addEventListener("mousedown", async (e) => {
+            e.preventDefault();
+            const x = Number(d.dataset.x);
+            const y = Number(d.dataset.y);
+            try {
+              if (running) return;
+              if (e.button === 0) {
+                await apiPost(`/api/cycle?x=${x}&y=${y}`);
+                await refresh();
+              } else if (e.button === 2) {
+                await apiPost(`/api/place_robot?x=${x}&y=${y}`);
+                await refresh();
+              }
+            } catch (err) {
+              alert(String(err.message || err));
+            }
+          });
+
+          gridEl.appendChild(d);
+        }
+      }
+
+      const rc = st.robotCell;
+      if (rc) {
+        statusEl.textContent = `Робот: (${rc.x},${rc.y}) ${rc.t} | Осталось П/Д: ${st.remaining} | Шаги: ${st.steps}`;
+      } else {
+        statusEl.textContent = `Робот не поставлен | Осталось П/Д: ${st.remaining} | Шаги: ${st.steps}`;
+      }
+    }
+
+    async function doStep() {
+      try {
+        await apiPost("/api/step");
+        await refresh();
+        const st = await apiGet("/api/state");
+        if (st.runningDone) stopRun();
+      } catch (err) {
+        stopRun();
+        alert(String(err.message || err));
+      }
+    }
+
+    function stopRun() {
+      running = false;
+      runBtn.textContent = "Run";
+      if (runTimer) clearInterval(runTimer);
+      runTimer = null;
+    }
+
+    runBtn.addEventListener("click", async () => {
+      if (running) {
+        stopRun();
+        return;
+      }
+      running = true;
+      runBtn.textContent = "Stop";
+      runTimer = setInterval(doStep, 70);
+    });
+
+    stepBtn.addEventListener("click", async () => {
+      if (running) return;
+      await doStep();
+    });
+
+    resetBtn.addEventListener("click", async () => {
+      if (running) return;
+      try {
+        await apiPost("/api/reset");
+        await refresh();
+      } catch (err) {
+        alert(String(err.message || err));
+      }
+    });
+
+    demoBtn.addEventListener("click", async () => {
+      if (running) return;
+      try {
+        await apiPost("/api/demo");
+        await refresh();
+      } catch (err) {
+        alert(String(err.message || err));
+      }
+    });
+
+    refresh().catch((e) => alert(String(e.message || e)));
+  </script>
+</body>
+</html>
