@@ -8,7 +8,6 @@ from stage0 import (
     CellType,
 )
 
-# ---------- Цвета клеток ----------
 CELL_COLORS = {
     CellType.EMPTY: "#ffffff",
     CellType.TEST_TUBE: "#ffd966",
@@ -19,7 +18,6 @@ CELL_COLORS = {
     CellType.FINISH: "#76d7c4",
 }
 
-# порядок циклической смены типа клетки при клике
 CELL_ORDER = [
     CellType.EMPTY,
     CellType.TEST_TUBE,
@@ -164,7 +162,6 @@ class RobotLabUI:
             justify="left"
         ).pack(anchor="w", pady=(8, 0))
 
-    # ---------- логика ----------
     def _take_snapshot(self):
         types = {(c.x, c.y): c.cell_type for c in self.lab.all_cells()}
         cur = self.robot.current_cell
@@ -202,7 +199,6 @@ class RobotLabUI:
 
                 b.config(text=text, bg=CELL_COLORS[cell.cell_type])
 
-    # ---------- выполнение программы ----------
     def on_execute(self):
         program_text = self.txt_program.get("1.0", "end").strip()
         commands = [
