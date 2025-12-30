@@ -1,0 +1,64 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: #f4f4f4;
+}
+
+h1 {
+    color: #333;
+}
+
+#controls {
+    margin: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin: 5px;
+}
+
+#maze-container {
+    margin: 20px auto;
+    display: inline-block;
+    border: 3px solid #333;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+td {
+    width: 50px;
+    height: 50px;
+    border: 1px solid #333;
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+    position: relative;
+}
+
+.pol { background: white; }
+.modul { background: yellow; }
+.instrument { background: cyan; }
+.prepyatstvie { background: gray; color: white; }
+.finish { background: red; color: white; }
+.kontur { background: green; color: white; }
+
+.robot::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    background: black;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#status {
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+}
