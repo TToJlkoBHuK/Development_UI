@@ -1,8 +1,7 @@
 body {
     font-family: Arial, sans-serif;
     text-align: center;
-    background: #f0f0f0;
-    margin: 20px;
+    background: #f4f4f4;
 }
 
 h1 {
@@ -14,49 +13,37 @@ h1 {
 }
 
 button {
-    font-size: 16px;
     padding: 10px 20px;
-    margin: 0 10px;
-    cursor: pointer;
+    font-size: 16px;
+    margin: 5px;
 }
 
 #maze-container {
+    margin: 20px auto;
     display: inline-block;
-    margin-top: 20px;
-}
-
-#status {
-    margin-top: 20px;
-    font-size: 18px;
-    font-weight: bold;
+    border: 3px solid #333;
 }
 
 table {
     border-collapse: collapse;
-    margin: 0 auto;
 }
 
 td {
     width: 50px;
     height: 50px;
-    border: 2px solid #333;
+    border: 1px solid #333;
     text-align: center;
-    vertical-align: middle;
-    font-size: 24px;
     font-weight: bold;
-    cursor: pointer;
-}
-
-.pol { background-color: white; color: black; }           /* П */
-.modul { background-color: yellow; color: black; }       /* М */
-.instrument { background-color: cyan; color: black; }    /* И */
-.prepyatstvie { background-color: gray; color: white; }  /* Б */
-.finish { background-color: red; color: white; }         /* Ф */
-.kontur { background-color: green; color: white; }       /* К */
-
-.robot {
+    font-size: 20px;
     position: relative;
 }
+
+.pol { background: white; }
+.modul { background: yellow; }
+.instrument { background: cyan; }
+.prepyatstvie { background: gray; color: white; }
+.finish { background: red; color: white; }
+.kontur { background: green; color: white; }
 
 .robot::after {
     content: "";
@@ -68,4 +55,10 @@ td {
     background: black;
     border-radius: 50%;
     transform: translate(-50%, -50%);
+}
+
+#status {
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
 }
