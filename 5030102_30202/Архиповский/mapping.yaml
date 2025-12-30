@@ -1,0 +1,49 @@
+классы:
+  - ЯчейкаРоботАрхеолог: RobotCell
+    свойства:
+      - ячейка_робота: has_robot
+      - тип_ячейки: cell_type
+    методы: []
+
+  - ЛабиринтРоботАрхеолог: RobotLabyrinth
+    свойства:
+      - ширина: width
+      - длина: height
+      - ячейки: cells
+    методы:
+      - ПолучитьСоседнююЯчейку: get_neighbor_cell
+      - ПолучитьИтератор: get_iterator
+      - ИнициализироватьЛабиринт: initialize_labyrinth
+
+  - РоботАрхеолог: RobotArcheolog
+    свойства:
+      - лабиринт: labyrinth
+    методы:
+      - Подкопать: podkopat
+      - Отступить: otstupit
+      - СместитьсяВлево: smestitsia_vlevo
+      - СместитьсяВправо: smestitsia_vpravo
+      - Подняться: podniatsia
+      - Спуститься: spustitsia
+      - Раскоп: dig
+      - Песок: clear_sand
+
+перечисления:
+  - ТипЯчеекРаскопы: CellType
+    опции:
+      - Раскоп: RASCOP
+      - Артефакт: ARTEFACT
+      - Песок: PESOC
+      - Кладка: KLADKA
+      - Барьер: BARRIER
+      - Финиш: FINISH
+      - Руины: RUINS
+
+  - ТипНаправленийАрхНапр: Direction
+    опции:
+      - ШагРаскоп: STEP_RASCOP
+      - ШагНазад: STEP_BACK
+      - ШагВлево: STEP_LEFT
+      - ШагВправо: STEP_RIGHT
+      - ДиагАрхВ: DIAG_ARCH_V
+      - ДиагАрхН: DIAG_ARCH_N
