@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Робот Оператор - Панели</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Робот Оператор</h1>
+        
+        <div class="info-panel" id="info">
+            Готов к работе
+        </div>
+
+        <div class="grid-container">
+            <div class="grid" id="grid"></div>
+        </div>
+
+        <div class="controls">
+            <button class="start" id="startBtn" onclick="startWork()">▶ Начать работу</button>
+            <button class="step" id="stepBtn" onclick="makeStep()">➡ Один шаг</button>
+            <button class="reset" onclick="resetGame()">🔄 Сброс</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: white;"></div>
+                <span>Пол (П)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #87ceeb;"></div>
+                <span>Панель (Пн)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #32cd32;"></div>
+                <span>Активно (А)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #000;"></div>
+                <span>Стена (■)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #555;"></div>
+                <span>Блок (▓)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ffd700;"></div>
+                <span>Финиш (F)</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="robot.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
