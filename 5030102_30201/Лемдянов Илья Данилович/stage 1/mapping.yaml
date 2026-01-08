@@ -1,0 +1,48 @@
+классы:
+  - РоботМинер: RobotMiner
+    свойства:
+      - лабиринт: maze
+    методы:
+      - ИдтиМин: go_forward
+      - ОтойтиМин: go_backward
+      - СместитьсяВлево: move_left
+      - СместитьсяВправо: move_right
+      - Подняться: move_up_left
+      - Спуститься: move_down_left
+      - Руда: process_ore
+      - Путь: process_path
+
+  - ЛабиринтРоботМинер: RobotMaze
+    свойства:
+      - ширина: width
+      - длина: height
+      - ячейки: cells
+    методы:
+      - ПолучитьСоседнююЯчейку: get_neighbor_cell
+      - ПолучитьИтератор: get_iterator
+      - ИнициализироватьЛабиринт: initialize_maze
+
+  - ЯчейкаРоботМинер: RobotCell
+    свойства:
+      - ячейка_робота: has_robot
+      - тип_ячейки: cell_type
+
+перечисления:
+  - ТипНаправленийМинНапр: DirectionType
+    опции:
+      - МинВперёд: FORWARD
+      - МинНазад: BACKWARD
+      - МинЛево: LEFT
+      - МинПраво: RIGHT
+      - ДиагМВ: DIAG_UP_LEFT
+      - ДиагМН: DIAG_DOWN_LEFT
+
+  - ТипЯчеекРудник: CellType
+    опции:
+      - Путь: PATH
+      - Руда: ORE
+      - Обработано: PROCESSED
+      - Забой: SHAFT
+      - Опасно: DANGEROUS
+      - Финиш: FINISH
+      - Рудник: MINE
