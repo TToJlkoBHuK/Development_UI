@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Robot Miner Web</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Robot Miner</h1>
+
+        <div class="main">
+            <div class="map-section">
+                <div class="upload-area">
+                    <input type="file" id="mapFile" accept=".txt">
+                    <div class="upload-hint">Выберите файл карты (.txt)</div>
+                </div>
+
+                <div id="mapContainer" class="map-container">
+                    <div id="noMap" class="no-map">Загрузите файл карты для начала работы</div>
+                </div>
+
+                <div class="status" id="status">Ожидание загрузки карты...</div>
+            </div>
+
+            <div class="control-section">
+                <div class="commands">
+                    <h3>Команды:</h3>
+                    <textarea id="commandInput" placeholder="Введите команды (каждая с новой строки)"></textarea>
+
+                    <div class="speed-control">
+                        <label>Задержка между командами: <span id="delayLabel">0.00 s</span></label>
+                        <input type="range" id="delayRange" min="0" max="2000" step="100" value="0">
+                        <div class="speed-hint">0 ms — без задержки, 2000 ms — медленно</div>
+                    </div>
+
+                    <div class="buttons">
+                        <button id="runBtn">▶ Выполнить</button>
+                        <button id="resetBtn">⟳ Сбросить</button>
+                        <button id="clearBtn">🗑️ Очистить</button>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <h3>Легенда</h3>
+                    <div class="legend-items">
+                        <div class="legend-item"><div class="legend-color path"></div><span>Путь (P)</span></div>
+                        <div class="legend-item"><div class="legend-color ore"></div><span>Руда (O)</span></div>
+                        <div class="legend-item"><div class="legend-color processed"></div><span>Обработано (✓)</span></div>
+                        <div class="legend-item"><div class="legend-color shaft"></div><span>Забой (#)</span></div>
+                        <div class="legend-item"><div class="legend-color danger"></div><span>Опасно (!)</span></div>
+                        <div class="legend-item"><div class="legend-color finish"></div><span>Финиш (F)</span></div>
+                        <div class="legend-item"><div class="legend-robot">🤖</div><span>Робот</span></div>
+                    </div>
+                </div>
+
+                <div class="command-examples">
+                    <strong>Примеры команд:</strong>
+                    <div>ИдтиМин - вперед</div>
+                    <div>ОтойтиМин - назад</div>
+                    <div>СместитьсяВлево/Вправо</div>
+                    <div>Подняться/Спуститься</div>
+                    <div>Руда - обработать руду</div>
+                    <div>Путь - создать руду</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+
+let currentSid = null;
+let pollingId = null;
+let isRunning = false;
+
+const statusEl = () => document.getElementById('status');
+const delayRange = document.getElementById('delayRange');
+const delayLabel = document.getElementById('delayLabel');
+
+function setSidToUrl(sid) {
+    try {
+        const newUrl = `${window.location.pathname}?sid=${encodeURIComponent(sid)}`;
+        window.history.replaceState(null, '', newUrl);
+    } catch (e) { console.warn(e); }
+}
+
+function getSidFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('sid');
+}
+
+
+(function(){
+    const sid = getSidFromUrl();
+    if (sid) {
+        currentSid = sid;
+        statusEl().textContent = 'SID в URL, загружаю карту...';
+        loadMap();
+    }
+})();
+
+
+delayRange.addEventListener('input', () => {
+    delayLabel.textContent = (Number(delayRange.value)/1000).toFixed(2) + ' s';
+});
+
+
+document.getElementById('mapFile').addEventListener('change', async function () {
+    const f = this.files[0];
+    if (!f) return;
+    statusEl().textContent = 'Загружаю карту...';
+    const fd = new FormData();
+    fd.append('file', f);
+    try {
+        const resp = await fetch('/upload_map', { method: 'POST', body: fd });
+        let data = null;
+        try { data = await resp.json(); } catch (e) { statusEl().textContent = 'Ошибка: сервер вернул не-JSON'; return; }
+        if (!resp.ok || data.error) {
+            statusEl().textContent = 'Ошибка загрузки: ' + (data.error || resp.status);
+            return;
+        }
+        currentSid = data.sid;
+        setSidToUrl(currentSid);
+        statusEl().textContent = `Карта загружена: ${data.width}x${data.height}`;
+        loadMap();
+    } catch (e) {
+        console.error(e);
+        statusEl().textContent = 'Ошибка загрузки: ' + e.message;
+    }
+});
+
+
+async function loadMap() {
+    if (!currentSid) {
+        statusEl().textContent = 'Нет SID';
+        return;
+    }
+    try {
+        const resp = await fetch(`/get_maze?sid=${currentSid}`);
+        const data = await resp.json();
+        if (data.error) { statusEl().textContent = data.error; return; }
+        renderMap(data);
+        statusEl().textContent = `Карта: ${data.width}x${data.height}`;
+    } catch (e) {
+        console.error(e);
+        statusEl().textContent = 'Ошибка получения карты';
+    }
+}
+
+
+function renderMap(data) {
+    const container = document.getElementById('mapContainer');
+    container.innerHTML = '';
+    const table = document.createElement('table');
+    table.className = 'maze-table';
+
+    for (let y = 0; y < data.height; y++) {
+        const tr = document.createElement('tr');
+        for (let x = 0; x < data.width; x++) {
+            const cell = data.cells[y][x];
+            const td = document.createElement('td');
+            let className = 'cell ';
+            let symbol = '';
+
+            switch(cell.type) {
+                case 0: className += 'path'; symbol = 'P'; break;
+                case 1: className += 'ore'; symbol = 'O'; break;
+                case 2: className += 'processed'; symbol = '✓'; break;
+                case 3: className += 'shaft'; symbol = '#'; break;
+                case 4: className += 'danger'; symbol = '!'; break;
+                case 5: className += 'finish'; symbol = 'F'; break;
+                default: className += 'path'; symbol = 'P';
+            }
+            if (cell.has_robot) { className += ' robot'; symbol = '🤖'; }
+
+            td.className = className;
+            td.title = `${cell.type_name} (${x}, ${y})${cell.has_robot ? ' - Робот' : ''}`;
+            td.textContent = symbol;
+            tr.appendChild(td);
+        }
+        table.appendChild(tr);
+    }
+
+    container.appendChild(table);
+}
+
+
+function startPolling() {
+    if (pollingId) clearInterval(pollingId);
+    pollingId = setInterval(async () => {
+        if (!currentSid) return;
+        try {
+            const st = await (await fetch(`/run_status?sid=${currentSid}`)).json();
+            if (st.last_error) {
+                statusEl().textContent = 'Ошибка: ' + st.last_error;
+            }
+
+            const m = await (await fetch(`/get_maze?sid=${currentSid}`)).json();
+            if (!m.error && m.cells) renderMap(m);
+
+            if (!st.running) {
+
+                clearInterval(pollingId);
+                pollingId = null;
+                isRunning = false;
+                document.getElementById('runBtn').disabled = false;
+                if (st.last_error) statusEl().textContent = 'Выполнение остановлено с ошибкой';
+                else statusEl().textContent = 'Выполнено';
+            } else {
+                statusEl().textContent = 'Выполняется...';
+            }
+        } catch (e) {
+            console.error('poll error', e);
+        }
+    }, 300);
+}
+
+
+function stopPolling() {
+    if (pollingId) clearInterval(pollingId);
+    pollingId = null;
+}
+
+
+document.getElementById('runBtn').addEventListener('click', async () => {
+    if (isRunning) return;
+    if (!currentSid) currentSid = getSidFromUrl();
+    if (!currentSid) { statusEl().textContent = 'Сначала загрузите карту'; return; }
+
+    const commands = document.getElementById('commandInput').value.trim();
+    if (!commands) { statusEl().textContent = 'Введите команды'; return; }
+
+    isRunning = true;
+    document.getElementById('runBtn').disabled = true;
+    statusEl().textContent = 'Запускаю...';
+
+    const delaySec = Number(delayRange.value) / 1000.0;
+
+    try {
+        const resp = await fetch('/run_commands', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ sid: currentSid, commands: commands, delay: delaySec })
+        });
+        const data = await resp.json();
+        if (resp.status === 202 || (data && data.started)) {
+            startPolling();
+        } else {
+            if (data.error) statusEl().textContent = 'Ошибка: ' + data.error;
+            else statusEl().textContent = 'Неожиданный ответ сервера';
+            isRunning = false;
+            document.getElementById('runBtn').disabled = false;
+        }
+    } catch (e) {
+        console.error(e);
+        statusEl().textContent = 'Ошибка запуска';
+        isRunning = false;
+        document.getElementById('runBtn').disabled = false;
+    }
+});
+
+
+document.getElementById('resetBtn').addEventListener('click', async () => {
+    if (!currentSid) currentSid = getSidFromUrl();
+    if (!currentSid) { statusEl().textContent = 'Сначала загрузите карту'; return; }
+
+    try {
+        const resp = await fetch('/reset_maze', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ sid: currentSid })
+        });
+        const data = await resp.json();
+        if (data.error) statusEl().textContent = 'Ошибка: ' + data.error;
+        else {
+            renderMap(data);
+            statusEl().textContent = 'Карта сброшена';
+        }
+    } catch (e) {
+        console.error(e);
+        statusEl().textContent = 'Ошибка сброса';
+    }
+});
+
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+    document.getElementById('commandInput').value = '';
+    statusEl().textContent = 'Команды очищены';
+});
+</script>
+</body>
+</html>
