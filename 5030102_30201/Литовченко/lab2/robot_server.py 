@@ -1,0 +1,350 @@
+from enum import Enum
+from typing import Optional, List, Tuple
+from collections import deque
+import json
+
+
+class CellType(Enum):
+    FLOOR = 0x0
+    PANEL = 0x1
+    ACTIVE = 0x2
+    SLUICE = 0x3
+    WALL = 0x4
+    BLOCK = 0x5
+    FINISH = 0x6
+
+
+class OperatorRobotCell:
+    def __init__(self, x: int = 0, y: int = 0, cell_value: int = 0x0):
+        self.x = x
+        self.y = y
+        self.has_robot = (cell_value & 0x8) != 0
+        self.cell_type = self._cell_type_from_value(cell_value)
+
+    def _cell_type_from_value(self, value: int) -> CellType:
+        base_value = value & 0x7
+        for cell_type in CellType:
+            if cell_type.value == base_value:
+                return cell_type
+        return CellType.FLOOR
+
+    def to_dict(self):
+        return {
+            'x': self.x,
+            'y': self.y,
+            'type': self.cell_type.value,
+            'has_robot': self.has_robot
+        }
+
+
+class OperatorRobotMaze:
+    def __init__(self, width: int = None, height: int = None, cells: List[List[int]] = None):
+        self.width = width if width is not None else 0
+        self.height = height if height is not None else 0
+        self.cells = []
+
+        if cells is not None:
+            self.load_from_values(cells)
+        elif width is not None and height is not None:
+            self.initialize_maze()
+
+    def load_from_values(self, cell_values: List[List[int]]):
+        if not cell_values:
+            self.height = 0
+            self.width = 0
+            self.cells = []
+            return
+
+        self.height = len(cell_values)
+        self.width = len(cell_values[0]) if self.height > 0 else 0
+        self.cells = []
+
+        for y in range(self.height):
+            row = []
+            for x in range(self.width):
+                cell_value = cell_values[y][x]
+                cell = OperatorRobotCell(x, y, cell_value)
+                row.append(cell)
+            self.cells.append(row)
+
+    def initialize_maze(self, cell_type: CellType = None):
+        if cell_type is None:
+            cell_type = CellType.FLOOR
+
+        self.cells = []
+        for y in range(self.height):
+            row = []
+            for x in range(self.width):
+                cell_value = cell_type.value
+                cell = OperatorRobotCell(x, y, cell_value)
+                row.append(cell)
+            self.cells.append(row)
+
+    def get_cell(self, x: int, y: int) -> Optional[OperatorRobotCell]:
+        if 0 <= x < self.width and 0 <= y < self.height:
+            return self.cells[y][x]
+        return None
+
+    def is_free(self, x: int, y: int) -> bool:
+        if not (0 <= x < self.width and 0 <= y < self.height):
+            return False
+        cell = self.get_cell(x, y)
+        if not cell:
+            return False
+        return cell.cell_type not in (CellType.WALL, CellType.BLOCK)
+
+    def to_dict(self):
+        return {
+            'width': self.width,
+            'height': self.height,
+            'cells': [[cell.to_dict() for cell in row] for row in self.cells]
+        }
+
+
+class OperatorRobot:
+    def __init__(self, maze: OperatorRobotMaze = None):
+        self.maze = maze
+        self.current_cell = None
+
+        if maze and maze.cells:
+            for y in range(maze.height):
+                for x in range(maze.width):
+                    cell = maze.get_cell(x, y)
+                    if cell and cell.has_robot:
+                        self.current_cell = cell
+                        return
+
+    def _move_to_cell(self, new_cell: Optional[OperatorRobotCell]) -> Optional[OperatorRobotCell]:
+        if new_cell and new_cell.cell_type not in [CellType.WALL, CellType.BLOCK]:
+            if self.current_cell:
+                self.current_cell.has_robot = False
+            self.current_cell = new_cell
+            new_cell.has_robot = True
+            return new_cell
+        return None
+
+    def channel_forward(self) -> Optional[OperatorRobotCell]:
+        if self.maze and self.current_cell:
+            new_cell = self.maze.get_cell(self.current_cell.x, self.current_cell.y + 1)
+            return self._move_to_cell(new_cell)
+        return None
+
+    def channel_backward(self) -> Optional[OperatorRobotCell]:
+        if self.maze and self.current_cell:
+            new_cell = self.maze.get_cell(self.current_cell.x, self.current_cell.y - 1)
+            return self._move_to_cell(new_cell)
+        return None
+
+    def channel_left(self) -> Optional[OperatorRobotCell]:
+        if self.maze and self.current_cell:
+            new_cell = self.maze.get_cell(self.current_cell.x - 1, self.current_cell.y)
+            return self._move_to_cell(new_cell)
+        return None
+
+    def channel_right(self) -> Optional[OperatorRobotCell]:
+        if self.maze and self.current_cell:
+            new_cell = self.maze.get_cell(self.current_cell.x + 1, self.current_cell.y)
+            return self._move_to_cell(new_cell)
+        return None
+
+    def lift_diag(self) -> Optional[OperatorRobotCell]:
+        if self.maze and self.current_cell:
+            new_cell = self.maze.get_cell(self.current_cell.x - 1, self.current_cell.y + 1)
+            return self._move_to_cell(new_cell)
+        return None
+
+    def descend_diag(self) -> Optional[OperatorRobotCell]:
+        if self.maze and self.current_cell:
+            new_cell = self.maze.get_cell(self.current_cell.x + 1, self.current_cell.y - 1)
+            return self._move_to_cell(new_cell)
+        return None
+
+    def panel(self):
+        if self.current_cell and self.current_cell.cell_type == CellType.PANEL:
+            self.current_cell.cell_type = CellType.ACTIVE
+
+    def floor(self):
+        if self.current_cell and self.current_cell.cell_type == CellType.FLOOR:
+            self.current_cell.cell_type = CellType.PANEL
+
+    def find_nearest_targets(self) -> List[Tuple[int, int]]:
+        targets = []
+        for y in range(self.maze.height):
+            for x in range(self.maze.width):
+                cell = self.maze.get_cell(x, y)
+                if cell and cell.cell_type in (CellType.FLOOR, CellType.PANEL):
+                    targets.append((x, y))
+
+        if targets:
+            return targets
+
+        for y in range(self.maze.height):
+            for x in range(self.maze.width):
+                cell = self.maze.get_cell(x, y)
+                if cell and cell.cell_type == CellType.FINISH:
+                    return [(x, y)]
+
+        return []
+
+    def bfs_next_step(self, start: Tuple[int, int], goals: List[Tuple[int, int]]) -> Optional[Tuple[int, int]]:
+        goals_set = set(goals)
+        queue = deque([start])
+        prev = {start: None}
+
+        while queue:
+            x, y = queue.popleft()
+
+            if (x, y) in goals_set:
+                cur = (x, y)
+                while prev[cur] is not None and prev[cur] != start:
+                    cur = prev[cur]
+                return cur if cur != start else None
+
+            neighbors = [
+                (x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1),
+                (x - 1, y + 1), (x + 1, y - 1)
+            ]
+
+            for nx, ny in neighbors:
+                if (nx, ny) not in prev and self.maze.is_free(nx, ny):
+                    prev[(nx, ny)] = (x, y)
+                    queue.append((nx, ny))
+
+        return None
+
+    def move_towards_goal(self) -> bool:
+        goals = self.find_nearest_targets()
+        if not goals:
+            return False
+
+        next_pos = self.bfs_next_step((self.current_cell.x, self.current_cell.y), goals)
+        if not next_pos:
+            return False
+
+        new_cell = self.maze.get_cell(next_pos[0], next_pos[1])
+        return self._move_to_cell(new_cell) is not None
+
+    def make_step(self) -> dict:
+        """Выполнить один шаг и вернуть результат"""
+        if not self.current_cell:
+            return {'status': 'error', 'message': 'Робот не найден'}
+
+        cell = self.current_cell
+
+        if cell.cell_type == CellType.FINISH:
+            return {
+                'status': 'finished',
+                'message': 'Работа завершена',
+                'position': (cell.x, cell.y)
+            }
+
+        if cell.cell_type == CellType.FLOOR:
+            self.floor()
+            return {
+                'status': 'processing',
+                'message': f'Позиция ({cell.x}, {cell.y}): Пол → Панель',
+                'position': (cell.x, cell.y)
+            }
+        elif cell.cell_type == CellType.PANEL:
+            self.panel()
+            return {
+                'status': 'processing',
+                'message': f'Позиция ({cell.x}, {cell.y}): Панель → Активно',
+                'position': (cell.x, cell.y)
+            }
+
+        moved = self.move_towards_goal()
+        if not moved:
+            return {
+                'status': 'error',
+                'message': 'Нет доступного пути к целям'
+            }
+
+        return {
+            'status': 'moving',
+            'message': f'Движение к позиции ({self.current_cell.x}, {self.current_cell.y})',
+            'position': (self.current_cell.x, self.current_cell.y)
+        }
+
+    def get_state(self) -> dict:
+        """Получить текущее состояние робота и лабиринта"""
+        return {
+            'maze': self.maze.to_dict(),
+            'robot_position': (self.current_cell.x, self.current_cell.y) if self.current_cell else None
+        }
+
+
+def create_test_grid(width: int, height: int) -> List[List[int]]:
+    """Создать тестовую сетку"""
+    cell_values = []
+
+    for y in range(height):
+        row = []
+        for x in range(width):
+            if x == 0 and y == 0:
+                cell_value = CellType.FLOOR.value | 0x8  # Пол + робот
+            elif x == width - 1 and y == height - 1:
+                cell_value = CellType.FINISH.value
+            elif (x == 2 and y == 1) or (x == 3 and y == 2):
+                cell_value = CellType.WALL.value
+            elif x == 1 and y == 2:
+                cell_value = CellType.BLOCK.value
+            elif (x + y) % 3 == 0:
+                cell_value = CellType.PANEL.value
+            else:
+                cell_value = CellType.FLOOR.value
+
+            row.append(cell_value)
+        cell_values.append(row)
+
+    return cell_values
+
+
+# Пример использования с Flask
+"""
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+
+# Глобальное состояние
+game_state = None
+
+@app.route('/api/init', methods=['POST'])
+def init_game():
+    global game_state
+    data = request.json
+    width = data.get('width', 7)
+    height = data.get('height', 5)
+    
+    cell_values = create_test_grid(width, height)
+    maze = OperatorRobotMaze(width, height, cell_values)
+    robot = OperatorRobot(maze)
+    
+    game_state = {'maze': maze, 'robot': robot}
+    
+    return jsonify(robot.get_state())
+
+@app.route('/api/step', methods=['POST'])
+def make_step():
+    if not game_state:
+        return jsonify({'error': 'Game not initialized'}), 400
+    
+    result = game_state['robot'].make_step()
+    state = game_state['robot'].get_state()
+    
+    return jsonify({
+        'result': result,
+        'state': state
+    })
+
+@app.route('/api/state', methods=['GET'])
+def get_state():
+    if not game_state:
+        return jsonify({'error': 'Game not initialized'}), 400
+    
+    return jsonify(game_state['robot'].get_state())
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
