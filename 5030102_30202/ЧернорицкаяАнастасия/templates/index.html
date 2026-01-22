@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Робот Техник</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #d1fae5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            color: #2d3748;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 15px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 1024px) {
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+
+        .panel {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .panel h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            font-size: 1.2em;
+        }
+
+        /* управление */
+        .movement-control {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .movement-control button {
+            aspect-ratio: 1;
+            font-size: 0.75em;
+            background: #34d399;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: bold;
+            padding: 5px;
+            min-height: 50px;
+        }
+
+        .movement-control button:hover:not(:disabled) {
+            background: #10b981;
+        }
+
+        .movement-control button:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .action-buttons button {
+            padding: 10px;
+            font-size: 0.9em;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-buttons button:hover:not(:disabled) {
+            background: #2563eb;
+        }
+
+        .action-buttons button:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .game-control {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .game-control button {
+            padding: 10px;
+            font-size: 0.9em;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .new-game {
+            background: #10b981;
+            color: white;
+        }
+
+        .new-game:hover {
+            background: #0d9c6b;
+        }
+
+        .finish-game {
+            background: #ef4444;
+            color: white;
+        }
+
+        .finish-game:hover {
+            background: #dc2626;
+        }
+
+        .rules-btn {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .rules-btn:hover {
+            background: #7c3aed;
+        }
+
+        /* лабиринт */
+        .maze-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .maze {
+            display: grid;
+            grid-template-columns: repeat(8, 45px);
+            grid-template-rows: repeat(8, 45px);
+            gap: 1px;
+            margin-bottom: 15px;
+            background-color: #f8fafc;
+            padding: 2px;
+            border-radius: 4px;
+        }
+
+        .cell {
+            width: 45px;
+            height: 45px;
+            border: 1px solid #e5e7eb;
+            position: relative;
+        }
+
+        /* Цвета ячеек */
+        .floor { background-color: white; }
+        .equipment { background-color: #fbbf24; }
+        .repaired { background-color: #10b981; }
+        .part { background-color: #3b82f6; }
+        .barrier { background-color: #ef4444; }
+        .finish { background-color: #8b5cf6; }
+        .warehouse { background-color: #9ca3af; }
+
+        /* Робот */
+        .robot {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background-color: #1f2937;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .robot::before,
+        .robot::after {
+            content: '';
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background-color: white;
+            border-radius: 50%;
+            top: 25%;
+        }
+
+        .robot::before {
+            left: 30%;
+        }
+
+        .robot::after {
+            right: 30%;
+        }
+
+        /* информация */
+        .status-item {
+            margin: 8px 0;
+            padding: 6px;
+            background: #f8fafc;
+            border-radius: 4px;
+        }
+
+        .status-item strong {
+            color: #2d3748;
+            display: block;
+            margin-bottom: 3px;
+            font-size: 0.9em;
+        }
+
+        #moves-counter {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #000000;
+        }
+
+        #game-status {
+            font-weight: bold;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+            padding: 3px;
+        }
+
+        .color-box {
+            width: 16px;
+            height: 16px;
+            border: 1px solid #475569;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .robot-legend {
+            background-color: #1f2937;
+            border-radius: 50%;
+        }
+
+        /* Сообщения */
+        .message {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .message.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .success {
+            background: #10b981;
+        }
+
+        .error {
+            background: #ef4444;
+        }
+
+        .warning {
+            background: #f59e0b;
+        }
+
+        /* Ходов осталось */
+        .moves-left {
+            text-align: center;
+            margin-top: 10px;
+            color: #475569;
+            font-size: 0.85em;
+            padding: 5px 10px;
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .moves-left span {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Робот Техник</h1>
+        </div>
+
+        <div class="game-container">
+            <!-- управление -->
+            <div class="panel">
+                <h2>Управление</h2>
+
+                <div class="movement-control">
+                    <button onclick="moveRobot('upleft')" title="Подняться">Подняться</button>
+                    <button onclick="moveRobot('forward')" title="Вперед">Вперёд</button>
+                    <button onclick="moveRobot('downright')" title="Спуститься">Спуститься</button>
+                    <button onclick="moveRobot('left')" title="Влево">Влево</button>
+                    <button onclick="moveRobot('backward')" title="Назад">Назад</button>
+                    <button onclick="moveRobot('right')" title="Вправо">Вправо</button>
+                </div>
+
+                <h3>Действия</h3>
+                <div class="action-buttons">
+                    <button onclick="repairEquipment()" id="btn-repair">Оборудовать</button>
+                    <button onclick="takePart()" id="btn-take-part">Взять запчасть</button>
+                </div>
+
+                <h3>Управление игрой</h3>
+                <div class="game-control">
+                    <button onclick="newGame()" class="new-game">Новая игра</button>
+                    <button onclick="showRules()" class="rules-btn">Правила</button>
+                    <button onclick="finishGame()" class="finish-game">Завершить</button>
+                </div>
+            </div>
+
+            <!-- лабиринт -->
+            <div class="panel maze-container">
+                <h2>Лабиринт (8×8)</h2>
+                <div id="maze" class="maze">
+                </div>
+                <div class="moves-left">
+                    Ходов осталось: <span id="moves-left">50</span>
+                </div>
+            </div>
+
+            <!-- информация -->
+            <div class="panel">
+                <h2>Информация</h2>
+
+                <div class="status-item">
+                    <strong>ID игры:</strong>
+                    <span id="game-id">Нажмите "Новая игра"</span>
+                </div>
+
+                <div class="status-item">
+                    <strong>Позиция:</strong>
+                    <span id="position">(0, 0)</span>
+                </div>
+
+                <div class="status-item">
+                    <strong>Тип ячейки:</strong>
+                    <span id="cell-type">Неизвестно</span>
+                </div>
+
+                <div class="status-item">
+                    <strong>Ходов сделано:</strong>
+                    <span id="moves-counter">0/50</span>
+                </div>
+
+                <div class="status-item">
+                    <strong>Статус:</strong>
+                    <span id="game-status" style="color: #3b82f6;">Ожидание начала</span>
+                </div>
+
+                <h3 style="margin-top: 15px; color: #475569;">Обозначения</h3>
+                <div class="legend-item">
+                    <div class="color-box floor"></div>
+                    <span>Пол</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box equipment"></div>
+                    <span>Оборудование</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box repaired"></div>
+                    <span>Починено</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box part"></div>
+                    <span>Запчасть</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box barrier"></div>
+                    <span>Барьер</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box finish"></div>
+                    <span>Финиш</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box warehouse"></div>
+                    <span>Склад</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box robot-legend"></div>
+                    <span>Робот</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- сообщения -->
+    <div id="message" class="message"></div>
+
+    <script>
+        let currentGameId = null;
+        let messageTimeout = null;
+
+        // Соответствие типов ячеек и классов CSS
+        const cellClasses = {
+            'Пол': 'floor',
+            'Оборуд': 'equipment',
+            'Починено': 'repaired',
+            'Запчасть': 'part',
+            'Барьер': 'barrier',
+            'Финиш': 'finish',
+            'Склад': 'warehouse'
+        };
+
+        // Показать сообщение
+        function showMessage(text, type = 'success') {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.className = `message ${type}`;
+            message.classList.add('show');
+
+            // Очистить предыдущий таймер
+            if (messageTimeout) {
+                clearTimeout(messageTimeout);
+            }
+
+            // Скрыть сообщение через 2 секунды
+            messageTimeout = setTimeout(() => {
+                message.classList.remove('show');
+            }, 2000);
+        }
+
+        // Начать новую игру
+        async function newGame() {
+            try {
+                const response = await fetch('/api/new_game', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    currentGameId = data.game_id;
+                    updateGameState(data.state);
+                    showMessage(`Новая игра создана! ID: ${currentGameId}`, 'success');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        // Получить состояние игры
+        async function getGameState() {
+            if (!currentGameId) return;
+
+            try {
+                const response = await fetch(`/api/game_state/${currentGameId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    updateGameState(data.state);
+                }
+            } catch (error) {
+                // Игнорируем ошибки при обновлении состояния
+            }
+        }
+
+        // Обновить отображение состояния игры
+        function updateGameState(state) {
+            if (!state) return;
+
+            // Обновить информацию
+            document.getElementById('game-id').textContent = currentGameId || 'Нет игры';
+            document.getElementById('position').textContent = `(${state.position.x}, ${state.position.y})`;
+            document.getElementById('cell-type').textContent = state.cell_type;
+            document.getElementById('moves-counter').textContent = state.moves;
+            document.getElementById('moves-left').textContent = state.moves_left;
+
+            // Обновить статус и цвет
+            const statusElement = document.getElementById('game-status');
+            if (state.status === 'Победа!') {
+                statusElement.style.color = '#10b981';
+                statusElement.textContent = 'Победа!';
+            } else if (state.game_over) {
+                statusElement.style.color = '#ef4444';
+                statusElement.textContent = 'Лимит ходов!';
+            } else {
+                statusElement.style.color = '#3b82f6';
+                statusElement.textContent = 'В работе';
+            }
+
+            // Обновить кнопки
+            const buttons = document.querySelectorAll('.movement-control button, .action-buttons button');
+            buttons.forEach(btn => {
+                btn.disabled = state.game_over || state.status === 'Победа!';
+            });
+
+            // Обновить счётчик ходов
+            const movesCounter = document.getElementById('moves-counter');
+            movesCounter.style.color = '#000000';
+
+            renderMaze(state.maze);
+
+            // Показать сообщение о победе
+            if (state.status === 'Победа!' && !window.gameWonShown) {
+                showMessage('Поздравляем! Вы выиграли!', 'success');
+                window.gameWonShown = true;
+            } else if (state.game_over && !window.gameOverShown) {
+                showMessage('Лимит ходов исчерпан! Создайте новую игру.', 'warning');
+                window.gameOverShown = true;
+            }
+        }
+
+        // Нарисовать лабиринт
+        function renderMaze(maze) {
+            const mazeElement = document.getElementById('maze');
+            mazeElement.innerHTML = '';
+
+            // Инвертируем Y
+            for (let displayY = 0; displayY < 8; displayY++) {
+                const robotY = 7 - displayY;
+                for (let x = 0; x < 8; x++) {
+                    const cell = maze[robotY][x];
+                    const cellElement = document.createElement('div');
+                    cellElement.className = `cell ${cellClasses[cell.type] || 'floor'}`;
+
+                    if (cell.has_robot) {
+                        const robotElement = document.createElement('div');
+                        robotElement.className = 'robot';
+                        cellElement.appendChild(robotElement);
+                    }
+
+                    mazeElement.appendChild(cellElement);
+                }
+            }
+        }
+
+        // Движение робота
+        async function moveRobot(direction) {
+            if (!currentGameId) {
+                showMessage('Сначала создайте игру!', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/move/${currentGameId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ direction })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    updateGameState(data.state);
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.error || data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        // Починить оборудование
+        async function repairEquipment() {
+            if (!currentGameId) {
+                showMessage('Сначала создайте игру!', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/repair/${currentGameId}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    updateGameState(data.state);
+                    showMessage('Оборудование починено!', 'success');
+                } else {
+                    showMessage('Не удалось починить оборудование', 'error');
+                }
+            } catch (error) {
+                showMessage('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        // Взять запчасть
+        async function takePart() {
+            if (!currentGameId) {
+                showMessage('Сначала создайте игру!', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/take_part/${currentGameId}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    updateGameState(data.state);
+                    showMessage('Запчасть взята!', 'success');
+                } else {
+                    showMessage('Не удалось взять запчасть', 'error');
+                }
+            } catch (error) {
+                showMessage('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        // Завершить игру
+        function finishGame() {
+            if (currentGameId && confirm('Вы уверены, что хотите завершить игру?')) {
+                currentGameId = null;
+                document.getElementById('maze').innerHTML = '';
+                document.getElementById('game-id').textContent = 'Нет игры';
+                document.getElementById('position').textContent = '(0, 0)';
+                document.getElementById('cell-type').textContent = 'Неизвестно';
+                document.getElementById('moves-counter').textContent = '0/50';
+                document.getElementById('moves-left').textContent = '50';
+                document.getElementById('game-status').textContent = 'Игра завершена';
+                document.getElementById('game-status').style.color = '#9ca3af';
+                window.gameWonShown = false;
+                window.gameOverShown = false;
+                showMessage('Игра завершена', 'warning');
+            }
+        }
+
+        // Показать правила
+        function showRules() {
+            alert(`ПРАВИЛА
+
+По лабиринту движется Робот Техник
+
+Цель игры:
+Починить всё оборудование (жёлтые клетки)
+Забрать все запчасти (синие клетки)
+Добраться до финиша (фиолетовая клетка)
+
+Управление:
+Используйте кнопки для движения
+Нажмите 'Оборудовать' на клетке с оборудованием
+Нажмите 'Взять запчасть' на клетке с запчастью
+
+Удачи!`);
+        }
+
+        window.onload = function() {
+            newGame();
+            setInterval(getGameState, 1000);
+        };
+    </script>
+</body>
+</html>
