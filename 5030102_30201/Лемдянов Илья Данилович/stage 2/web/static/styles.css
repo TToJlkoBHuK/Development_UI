@@ -1,0 +1,49 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#0f1724; color:#e6f0ff; line-height:1.6; padding:20px; }
+.container { max-width:1200px; margin:0 auto; }
+h1 { text-align:center; margin-bottom:20px; color:#4DD0E1; }
+.main { display:flex; gap:20px; flex-wrap:wrap; }
+.map-section { flex:1; min-width:300px; }
+.control-section { width:350px; min-width:300px; }
+.upload-area { margin-bottom:15px; background:#123047; padding:15px; border-radius:8px; border:1px solid #1a3a5f; }
+.upload-area input[type="file"] { width:100%; padding:8px; background:#0b1a26; border:1px solid #1a3a5f; border-radius:4px; color:#e6f0ff; cursor:pointer; }
+.upload-hint { margin-top:5px; color:#94a3b8; font-size:12px; text-align:center; }
+.map-container { background:#0b1a26; border:1px solid #1a3a5f; border-radius:8px; padding:15px; min-height:400px; overflow:auto; margin-bottom:15px; }
+.no-map { text-align:center; color:#94a3b8; padding:50px; font-style:italic; }
+.maze-table { border-collapse:collapse; margin:0 auto; background:#1a3a5f; }
+.maze-table td { width:40px; height:40px; border:1px solid #243544; text-align:center; font-weight:bold; font-size:16px; }
+.cell.path { background:#D0D7DE; color:#1b2730; }
+.cell.ore { background:#FFB74D; color:#1b2730; }
+.cell.processed { background:#81C784; color:#1b2730; }
+.cell.shaft { background:#455A64; color:white; }
+.cell.danger { background:#E53935; color:white; }
+.cell.finish { background:#8E24AA; color:white; }
+.cell.robot { position:relative; }
+.cell.robot::after { content:'🤖'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:20px; }
+.status { background:#08111a; border:1px solid #1a3a5f; border-radius:8px; padding:12px; font-size:14px; min-height:40px; }
+.commands { background:#123047; border:1px solid #1a3a5f; border-radius:8px; padding:15px; margin-bottom:15px; }
+.commands h3 { margin-bottom:10px; color:#4DD0E1; font-size:18px; }
+#commandInput { width:100%; height:150px; padding:10px; background:#0b1a26; border:1px solid #1a3a5f; border-radius:4px; color:#e6f0ff; font-family:monospace; font-size:14px; margin-bottom:10px; resize:vertical; }
+.buttons { display:flex; gap:8px; margin-bottom:15px; }
+button { flex:1; padding:10px; border:none; border-radius:4px; font-size:14px; cursor:pointer; transition:opacity .2s; }
+button:hover { opacity:.9; }
+button:disabled { opacity:.5; cursor:not-allowed; }
+#runBtn { background:#43A047; color:white; }
+#resetBtn { background:#FF8A65; color:white; }
+#clearBtn { background:#E53935; color:white; }
+.legend { background:#123047; border:1px solid #1a3a5f; border-radius:8px; padding:15px; margin-bottom:15px; }
+.legend h3 { margin-bottom:10px; color:#4DD0E1; font-size:18px; }
+.legend-items { display:flex; flex-direction:column; gap:8px; }
+.legend-item { display:flex; align-items:center; gap:10px; }
+.legend-color { width:20px; height:20px; border-radius:3px; border:1px solid rgba(255,255,255,0.2); }
+.legend-color.path { background:#D0D7DE; } .legend-color.ore { background:#FFB74D; } .legend-color.processed { background:#81C784; } .legend-color.shaft { background:#455A64; } .legend-color.danger { background:#E53935; } .legend-color.finish { background:#8E24AA; }
+.legend-robot { width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+.legend-item span { color:#e6f0ff; font-size:14px; }
+.command-examples { background:#123047; border:1px solid #1a3a5f; border-radius:8px; padding:15px; font-size:13px; color:#e6f0ff; }
+.command-examples div { margin-top:4px; padding-left:8px; border-left:2px solid #4DD0E1; }
+@media (max-width:768px) { .main { flex-direction:column; } .control-section { width:100%; } .maze-table td { width:30px; height:30px; font-size:14px; } }
+
+
+.speed-control { margin:10px 0 12px 0; display:flex; flex-direction:column; gap:6px; color:#e6f0ff; font-size:13px; }
+#delayRange { width:100%; appearance:none; height:6px; border-radius:4px; background:linear-gradient(90deg,#4DD0E1,#123047); outline:none; margin-top:4px; }
+.speed-hint { font-size:12px; color:#94a3b8; }
