@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Garden-Robot</title>
+    <style>
+        :root { --bg: #f0f2f5; --panel: #ffffff; --primary: #4CAF50; --danger: #ff4757; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
+        
+        .layout { display: flex; gap: 20px; background: var(--panel); padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        
+        .map-section { display: flex; flex-direction: column; align-items: center; }
+        canvas { border: 3px solid #333; border-radius: 8px; background: #fff; }
+        
+        .controls { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px); gap: 10px; }
+        .btn { border: none; background: #e0e0e0; border-radius: 8px; font-size: 20px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .btn:hover { background: #d0d0d0; transform: scale(1.05); }
+        .btn:active { background: #bbb; }
+        .btn-auto { grid-column: span 3; background: var(--primary); color: white; font-weight: bold; font-size: 16px; margin-top: 10px; height: 50px; }
+        .btn-auto:disabled { background: #ccc; cursor: not-allowed; }
+
+        .history-section { width: 320px; display: flex; flex-direction: column; }
+        #history { flex-grow: 1; height: 450px; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; overflow-y: auto; padding: 10px; font-family: 'Consolas', monospace; font-size: 13px; }
+        .log-entry { margin-bottom: 5px; padding-bottom: 2px; border-bottom: 1px solid #f0f0f0; }
+
+        .legend { margin-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .color-dot { width: 18px; height: 18px; border-radius: 4px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+
+    <h1>Garden Robot <span style="color: var(--primary)"></span></h1>
+
+    <div class="layout">
+        <div class="map-section">
+            <canvas id="gardenCanvas" width="390" height="455"></canvas>
+            
+            <div class="controls">
+                <button class="btn" onclick="move(-1, 1)">↖</button>
+                <button class="btn" onclick="move(0, 1)">↑</button>
+                <button class="btn" onclick="move(1, 1)">↗</button>
+
+                
+                <button class="btn" onclick="move(-1, 0)">←</button>
+                <div class="btn" style="background:none; cursor:default">●</div>
+                <button class="btn" onclick="move(1, 0)">→</button>
+                
+                <button class="btn" onclick="move(-1, -1)">↙</button>
+                <button class="btn" onclick="move(0, -1)">↓</button>
+                <button class="btn" onclick="move(1, -1)">↘</button>
+
+                <button id="autoBtn" class="btn btn-auto" onclick="runAuto()">АВТОПРОХОД</button>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <div style="font-weight: bold; margin-bottom: 10px;">ИСТОРИЯ ХОДОВ</div>
+            <div id="history"></div>
+        </div>
+    </div>
+
+    <div class="legend" id="legend"></div>
+
+    <script>
+        const canvas = document.getElementById('gardenCanvas');
+        const ctx = canvas.getContext('2d');
+        const cellSize = 65;
+        const colors = {
+            "Дорога": "#ffffff", "Клумба": "#DF17D9", "Грядка": "#9A4D0A",
+            "Стена": "#2d2d2d", "Вода": "#00BFFF", "Грунт": "#094F20", "Финиш": "#ED0E0E"
+        };
+
+        async function fetchState() {
+            const res = await fetch('/state');
+            const data = await res.json();
+            draw(data);
+            updateHistory(data.history);
+        }
+
+        function draw(data) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let x = 0; x < 6; x++) {
+                for (let y = 0; y < 7; y++) {
+                    ctx.fillStyle = colors[data.grid[x][y]];
+                    ctx.fillRect(x * cellSize, (6 - y) * cellSize, cellSize, cellSize);
+                    ctx.strokeStyle = "#eee";
+                    ctx.strokeRect(x * cellSize, (6 - y) * cellSize, cellSize, cellSize);
+                }
+            }
+            const [rx, ry] = data.robot_pos;
+            ctx.beginPath();
+            ctx.fillStyle = "#ff4757";
+            ctx.arc(rx * cellSize + cellSize/2, (6 - ry) * cellSize + cellSize/2, 22, 0, Math.PI*2);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function updateHistory(history) {
+            const container = document.getElementById('history');
+            container.innerHTML = history.map(line => `<div class="log-entry">> ${line}</div>`).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function move(dx, dy) {
+            await fetch('/move', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify([dx, dy])
+            });
+            fetchState();
+        }
+
+        async function runAuto() {
+            const btn = document.getElementById('autoBtn');
+            btn.disabled = true;
+            
+            const res = await fetch('/plan_auto');
+            const data = await res.json();
+            const path = data.path;
+
+            for (const step of path) {
+                const currentState = await (await fetch('/state')).json();
+                const [cx, cy] = currentState.robot_pos;
+                const dx = step[0] - cx;
+                const dy = step[1] - cy;
+                
+                await move(dx, dy);
+                await new Promise(r => setTimeout(r, 300));
+            }
+            
+            btn.disabled = false;
+        }
+
+        const legDiv = document.getElementById('legend');
+        for (const [name, color] of Object.entries(colors)) {
+            legDiv.innerHTML += `
+                <div class="legend-item">
+                    <div class="color-dot" style="background:${color}"></div>
+                    ${name}
+                </div>`;
+        }
+
+        fetchState();
+    </script>
+</body>
+</html>
